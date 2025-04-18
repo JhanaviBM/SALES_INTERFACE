@@ -147,8 +147,6 @@ function App() {
     ],
   };
 
-
-
   return (
     <>
       {/*PieChart based on salestype*/}
