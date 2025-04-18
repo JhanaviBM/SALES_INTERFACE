@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import data from "./data/data.json";
 import "./index.css";
 import { Chart as ChartJS, plugins } from 'chart.js/auto'
-import {Pie} from 'react-chartjs-2'
-
-
-
+import {Pie, Line} from 'react-chartjs-2'
 
 
 
@@ -16,27 +13,24 @@ function App() {
     setSalesData(data);
   }, []);
 
-  console.log(salesData);
-
+  //onsole.log(salesData);
 
   const wholesaler = salesData
     .filter((data) => data["SALE TYPE"] === "Wholesaler")
-    .reduce((sum, data) => sum + Number(data["QUANTITY"]), 0); 
-    ;
+    .reduce((sum, data) => sum + Number(data["QUANTITY"]), 0);
+  //console.log("wholesaler", wholesaler)
 
-  console.log("wholesaler", wholesaler)
-  
   const online = salesData
     .filter((data) => data["SALE TYPE"] === "Online")
     .reduce((sum, data) => sum + Number(data["QUANTITY"]), 0);
-  
-  console.log("online", online);
+
+  //console.log("online", online);
 
   const direct = salesData
     .filter((data) => data["SALE TYPE"] === "Direct Sales")
     .reduce((sum, data) => sum + Number(data["QUANTITY"]), 0);
-  
-  console.log("direct", direct);
+
+  //console.log("direct", direct);
 
   const pieData = {
     labels: [...new Set(salesData.map((data) => data["SALE TYPE"]))],
@@ -49,7 +43,6 @@ function App() {
         //   "#32CD32",
         //   "#1E90FF",
         // ],
-        
       },
     ],
   };
@@ -73,7 +66,87 @@ function App() {
     },
   };
 
-  console.log(pieData);
+  //console.log(pieData);
+  const [profit, setProfit] = useState(0);
+
+  useEffect(() => {
+    const totalBuying = salesData
+      .map((data) => data["TOTAL Buying value"])
+      .map((data) => data.replace("$", ""))
+      .map((data) => data.replace(",", ""))
+      .map((data) => parseFloat(data))
+      .reduce((sum, data) => sum + data, 0);
+    //console.log("totalbuy", totalBuying);
+    const totalSelling = salesData
+      .map((data) => data["TOTAL Selling value"])
+      .map((data) => data.replace("$", ""))
+      .map((data) => data.replace(",", ""))
+      .map((data) => parseFloat(data))
+      .reduce((sum, data) => sum + data, 0);
+    //console.log("totalsell", totalSelling);
+
+    const calculateProfit = totalSelling - totalBuying;
+    setProfit(calculateProfit.toFixed(2));
+  }, [salesData]);
+
+
+
+  const [profitList, setProfitList] = useState([])
+
+  useEffect(() => {
+   
+    let months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    let janQuantity = 0;
+    let profits = []
+      for (let idx = 0; idx < months.length; idx++) {
+        janQuantity = salesData.filter((data) => data["MONTH"] === months[idx]);
+        console.log("----------------", idx);
+        let janBuy = janQuantity
+          .map((data) => data["TOTAL Buying value"])
+          .map((data) => data.replace("$", ""))
+          .map((data) => data.replace(",", ""))
+          .map((data) => parseInt(data))
+          .reduce((sum, data) => sum + data, 0);
+        let janSell = janQuantity
+          .map((data) => data["TOTAL Selling value"])
+          .map((data) => data.replace("$", ""))
+          .map((data) => data.replace(",", ""))
+          .map((data) => parseInt(data))
+          .reduce((sum, data) => sum + data, 0);
+        var calculateProfit = janSell - janBuy;
+        console.log(`--------${months[idx]}`, calculateProfit);
+        profits.push(calculateProfit)
+      }
+    setProfitList(profits);
+
+    console.log(profitList)
+
+  }, [salesData])
+
+  const lineData = {
+    labels: [...new Set(salesData.map((data) => data["MONTH"]))],
+    datasets: [
+      {
+        label: "MONTHLY WISE SALES",
+        data: profitList,
+      },
+    ],
+  };
+
 
 
   return (
@@ -83,6 +156,25 @@ function App() {
         <h1 className="text-4xl text-center m-10 bg-teal-100 p-2 rounded-md font-serif">
           Sales Interface
         </h1>
+        {/*profit section*/}
+        <div className="flex m-10">
+          <div className="w-[20%] h-50 p-5 rounded-md bg-teal-100">
+            <h3 className="bg-teal-500 text-white font-bold px-2 py-2 text-xl rounded-md">
+              TOTAL PROFIT
+            </h3>
+            <div className="bg-teal-50 mt-4 px-2 py-2 font-semibold">
+              Profit : ${profit}
+            </div>
+          </div>
+          {/*Monthly section*/}
+          <div className="w-[80%] h-200  ml-10 p-5 rounded-md bg-teal-100">
+            <h1 className="bg-teal-500 text-white font-bold px-2 py-2 text-xl rounded-md">
+              Monthly profit chart
+            </h1>
+            <Line data={lineData} />
+          </div>
+        </div>
+        {/*Running*/}
         <div className="bg-teal-100 rounded-md p-5 m-10 w-[30%]">
           <Pie data={pieData} options={pieOptions} />
         </div>
