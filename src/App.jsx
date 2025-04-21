@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import data from "./data/data.json";
 import "./index.css";
 import { Chart as ChartJS, plugins } from 'chart.js/auto'
-import {Pie, Line} from 'react-chartjs-2'
+import {Pie, Line, Bar} from 'react-chartjs-2'
 
 
 
@@ -13,7 +13,7 @@ function App() {
     setSalesData(data);
   }, []);
 
-  //onsole.log(salesData);
+  //console.log(salesData);
 
   const wholesaler = salesData
     .filter((data) => data["SALE TYPE"] === "Wholesaler")
@@ -89,12 +89,11 @@ function App() {
     setProfit(calculateProfit.toFixed(2));
   }, [salesData]);
 
-
-
-  const [profitList, setProfitList] = useState([])
+  const [profitList, setProfitList] = useState([]);
+  const [totalBuy, setTotalBuy] = useState([]);
+  const [totalSell, setTotalSell] = useState([]);
 
   useEffect(() => {
-   
     let months = [
       "Jan",
       "Feb",
@@ -111,31 +110,40 @@ function App() {
     ];
 
     let janQuantity = 0;
-    let profits = []
-      for (let idx = 0; idx < months.length; idx++) {
-        janQuantity = salesData.filter((data) => data["MONTH"] === months[idx]);
-        console.log("----------------", idx);
-        let janBuy = janQuantity
-          .map((data) => data["TOTAL Buying value"])
-          .map((data) => data.replace("$", ""))
-          .map((data) => data.replace(",", ""))
-          .map((data) => parseInt(data))
-          .reduce((sum, data) => sum + data, 0);
-        let janSell = janQuantity
-          .map((data) => data["TOTAL Selling value"])
-          .map((data) => data.replace("$", ""))
-          .map((data) => data.replace(",", ""))
-          .map((data) => parseInt(data))
-          .reduce((sum, data) => sum + data, 0);
-        var calculateProfit = janSell - janBuy;
-        console.log(`--------${months[idx]}`, calculateProfit);
-        profits.push(calculateProfit)
-      }
+    let profits = [];
+    let buyList = [];
+    let sellList = [];
+
+    for (let idx = 0; idx < months.length; idx++) {
+      janQuantity = salesData.filter((data) => data["MONTH"] === months[idx]);
+      //console.log("----------------", idx);
+      let janBuy = janQuantity
+        .map((data) => data["TOTAL Buying value"])
+        .map((data) => data.replace("$", ""))
+        .map((data) => data.replace(",", ""))
+        .map((data) => parseInt(data))
+        .reduce((sum, data) => sum + data, 0);
+      buyList.push(janBuy);
+      setTotalBuy(buyList);
+      //console.log("janbuy", buyList)
+      let janSell = janQuantity
+        .map((data) => data["TOTAL Selling value"])
+        .map((data) => data.replace("$", ""))
+        .map((data) => data.replace(",", ""))
+        .map((data) => parseInt(data))
+        .reduce((sum, data) => sum + data, 0);
+      sellList.push(janSell);
+      setTotalSell(sellList);
+      //console.log("janSell", sellList);
+      var calculateProfit = janSell - janBuy;
+      //console.log(`--------${months[idx]}`, calculateProfit);
+      profits.push(calculateProfit);
+    }
     setProfitList(profits);
-
-    console.log(profitList)
-
-  }, [salesData])
+    setTotalBuy(buyList);
+    setTotalSell(sellList);
+    //console.log(profitList);
+  }, [salesData]);
 
   const lineData = {
     labels: [...new Set(salesData.map((data) => data["MONTH"]))],
@@ -144,8 +152,149 @@ function App() {
         label: "MONTHLY WISE SALES",
         data: profitList,
       },
+      {
+        label: "TOTAL BUYING SALES",
+        data: totalBuy,
+      },
+      {
+        label: "TOTAL SELLING SALES",
+        data: totalSell,
+      },
     ],
   };
+  //successfully running category
+  const [category, setCategory] = useState(0);
+  useEffect(() => {
+    let countCategory = [];
+    const categoryArray = [];
+    const categoryData = [
+      "Category01",
+      "Category02",
+      "Category03",
+      "Category04",
+      "Category05",
+    ];
+    for (let idx = 0; idx < categoryData.length; idx++) {
+      let categoryField = salesData.filter(
+        (data) => data["CATEGORY"] === categoryData[idx]
+      );
+      countCategory.push(categoryField);
+    }
+    //console.log(countCategory)
+
+    for (let i = 0; i < countCategory.length; i++) {
+      categoryArray.push(countCategory[i].length);
+    }
+    //console.log(categoryArray)
+    setCategory(categoryArray);
+  }, [salesData]);
+
+  const barData = {
+    //labels: [...new Set(salesData.map((data) => data["CATEGORY"]))],
+    labels: [
+      "Category01",
+      "Category02",
+      "Category03",
+      "Category04",
+      "Category05",
+    ],
+    datasets: [
+      {
+        label: "SUCCESSFULLY RUNNING CATEGORY",
+        data: category,
+        backgroundColor: "rgba(50, 142, 222, 0.4)",
+      },
+    ],
+  };
+
+  //successfully running product
+  const [product, setProduct] = useState([]);
+  const [countQuantity, setCountQuantity] = useState([]);
+  const productField = [];
+  const productCount = [];
+
+  useEffect(() => {
+    const products = [...new Set(salesData.map((data) => data["PRODUCT"]))];
+    for (let idx = 0; idx < products.length; idx++) {
+      productField.push(
+        salesData.filter((data) => data["PRODUCT"] === products[idx])
+      );
+    }
+    for (let i = 0; i < productField.length; i++) {
+      productCount.push(productField[i].length);
+    }
+    setProduct(productCount);
+
+    let quantityField = [];
+    let quantityCount = [];
+
+    for (let i = 0; i < products.length; i++) {
+      quantityField = salesData
+        .filter((data) => data["PRODUCT"] === products[i])
+        .map((data) => data["QUANTITY"])
+        .map((data) => parseInt(data))
+        .reduce((sum, data) => sum + data, 0);
+      quantityCount.push(quantityField);
+    }
+    setCountQuantity(quantityCount)
+    //console.log("qc", quantityCount);
+
+  }, [salesData]);
+
+  const productQuantityData = {
+    labels: [...new Set(salesData.map((data) => data["PRODUCT"]))],
+    datasets: [
+      {
+        label: "SUCCESSFULLY RUNNING PRODUCT",
+        data: product,
+        // backgroundColor:"rgba(200, 10, 90, 0.7)"
+      },
+      {
+        label: "SUCCESSFULLY RUNNING QUANTITY",
+        data: countQuantity,
+        // backgroundColor:"rgb(20, 250, 175)"
+      },
+    ],
+  };
+  const productQuantityOptions = {
+    plugins: {
+      legend: { position: "top" },
+    },
+    responsive: true,
+    scales: {
+      x: {
+        stacked: true,
+      },
+      y: {
+        stacked: true,
+      },
+    },
+  };
+
+  //daily in month sales
+  const months = [
+    "Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
+  ]
+  const labelData = [salesData
+    .filter((data) => data["MONTH"] === months[0] && data["YEAR"] === "2021")
+    .map((data)=> data["DAY "])
+  ]
+  console.log(labelData);
+  const labelValue = [salesData
+    .filter((data) => data["MONTH"] === months[0] && data["YEAR"] === "2021")
+    .map((data)=> data["QUANTITY"])
+  ]
+  console.log("lv", labelValue)
+  
+  const dailyData = {
+    labels: labelData,
+    datasets: [
+      {
+        label: "Daily Sales",
+        data: labelValue,
+      }
+    ]
+  }
 
   return (
     <>
@@ -157,7 +306,7 @@ function App() {
         {/*profit section*/}
         <div className="flex m-10">
           <div className="w-[20%] h-50 p-5 rounded-md bg-teal-100">
-            <h3 className="bg-teal-500 text-white font-bold px-2 py-2 text-xl rounded-md">
+            <h3 className="bg-teal-600 text-white font-bold px-2 py-2 text-xl rounded-md">
               TOTAL PROFIT
             </h3>
             <div className="bg-teal-50 mt-4 px-2 py-2 font-semibold">
@@ -165,16 +314,59 @@ function App() {
             </div>
           </div>
           {/*Monthly section*/}
-          <div className="w-[80%] h-200  ml-10 p-5 rounded-md bg-teal-100">
-            <h1 className="bg-teal-500 text-white font-bold px-2 py-2 text-xl rounded-md">
+          <div className="w-[50%] h-130 ml-10 p-5 rounded-md bg-teal-100">
+            <h1 className="bg-teal-600 text-white font-bold px-2 py-2 text-xl rounded-md">
               Monthly profit chart
             </h1>
             <Line data={lineData} />
           </div>
+          <div className="bg-teal-100 rounded-md p-5 ml-10 w-[30%]">
+            <Pie data={pieData} options={pieOptions} />
+          </div>
         </div>
-        {/*Running*/}
-        <div className="bg-teal-100 rounded-md p-5 m-10 w-[30%]">
-          <Pie data={pieData} options={pieOptions} />
+        {/*daily in a month sales*/}
+        <div className="ml-10 p-5 rounded-md bg-teal-100">
+          <div className="flex gap-150 bg-teal-600 rounded-md">
+            <h3 className="font-bold text-white px-2 py-2 text-xl ">
+              Daily Monthly Sales
+            </h3>
+            <select className="border-1">
+              <option>January</option>
+              <option>Febraury</option>
+              <option>March</option>
+              <option>April</option>
+              <option>June</option>
+              <option>July</option>
+              <option>August</option>
+              <option>September</option>
+              <option>October</option>
+              <option>September</option>
+              <option>September</option>
+            </select>
+          </div>
+
+          <div>
+            <div>
+              <Bar data={dailyData} />
+            </div>
+          </div>
+        </div>
+
+        {/*Running successful product*/}
+        <div className="flex  m-10">
+          <div className="bg-teal-100 w-[30%] mr-10 rounded-lg">
+            <h3 className="m-5 bg-teal-600 text-white font-bold px-2 py-2 text-xl rounded-md">
+              Running successful category
+            </h3>
+            <Bar data={barData} />
+          </div>
+          {/*Running products products and quantity*/}
+          <div className="bg-teal-100 w-[70%] rounded-lg">
+            <h3 className="bg-teal-600 m-5 text-white font-bold px-2 py-2 text-xl rounded-md">
+              Running successful product
+            </h3>
+            <Bar data={productQuantityData} options={productQuantityOptions} />
+          </div>
         </div>
 
         <table className="m-10 border-1 border-teal-50 bg-teal-100 rounded-sm">
